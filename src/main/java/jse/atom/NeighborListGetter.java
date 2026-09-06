@@ -470,7 +470,7 @@ public class NeighborListGetter implements IHasSymbol {
             }
         }
         void forEachNeighbor(IDxyzIdxDo aDxyzIdxDo) {
-            for (int ji = 0; ji < mNnn; ++ji) {
+            for (int ji = 0; ji < mSize; ++ji) {
                 aDxyzIdxDo.run(mDx[ji], mDy[ji], mDz[ji], mIdx[ji]);
             }
         }
