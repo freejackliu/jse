@@ -924,7 +924,7 @@ public class NNAP extends AbstractPairPotential {
         mCudaGradNlDy = mPtrMngTot.newFloatCudaPointer();
         mCudaGradNlDz = mPtrMngTot.newFloatCudaPointer();
         
-        mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
+        mCudaNlGetter = new CudaNeighborListGetter(mRCutMax, true); // 总是重新调整原子种类顺序来进行优化
         mCudaLmpType2NNAPType = mPtrMngTot.newIntCudaPointer(aPair.mNumTypes+1);
         mCudaLmpType2NNAPType.fill(aPair.mLmpType2NNAPType, aPair.mNumTypes+1);
     }
@@ -974,7 +974,7 @@ public class NNAP extends AbstractPairPotential {
         tCode = mCuda2Lammps.invoke(
             nlocal, nghost, eflagEither?1:0, aPair.eflagAtom()?1:0, vflagEither?1:0, vflagAtom?1:0, cvflagAtom?1:0,
             aPair.atomF(), aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
+            mCudaNlGetter.ilist(), mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
         );
         CudaCore.cudaExceptionCheck(tCode);
         mCudaCopyTimer.to();

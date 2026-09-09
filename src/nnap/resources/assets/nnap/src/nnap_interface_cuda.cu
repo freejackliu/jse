@@ -372,64 +372,67 @@ extern "C" {
 __jsefunc__ int jse_nnap_cuda2lammps(
     int nlocal, int nghost, int eflag, int eflagAtom, int vflag, int vflagAtom, int cvflagAtom,
     double **f, double *engVdwl, double *eatom, double *virial, double **vatom, double **cvatom,
-    JSE_NNAP::flt_t *fltBuf, JSE_NNAP::flt_t *cudaF, JSE_NNAP::flt_t *cudaEatom0,
-    JSE_NNAP::flt_t *cudaVatom0, JSE_NNAP::flt_t *cudaVatom1) {
+    int *ilist, JSE_NNAP::flt_t *fltBuf, JSE_NNAP::flt_t *cudaF,
+    JSE_NNAP::flt_t *cudaEatom0, JSE_NNAP::flt_t *cudaVatom0, JSE_NNAP::flt_t *cudaVatom1) {
     
     const int nlocalghost = nlocal + nghost;
     cudaError_t tErr;
     tErr = cudaMemcpy(fltBuf, cudaF, nlocalghost*3L*sizeof(JSE_NNAP::flt_t), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
-    for (int i = 0; i < nlocalghost; ++i) {
-        f[i][0] += (double)fltBuf[0L*nlocalghost + i];
-        f[i][1] += (double)fltBuf[1L*nlocalghost + i];
-        f[i][2] += (double)fltBuf[2L*nlocalghost + i];
+    for (int ii = 0; ii < nlocalghost; ++ii) {
+        const int i = ilist[ii];
+        f[i][0] += (double)fltBuf[0L*nlocalghost + ii];
+        f[i][1] += (double)fltBuf[1L*nlocalghost + ii];
+        f[i][2] += (double)fltBuf[2L*nlocalghost + ii];
     }
     
     if (eflag || eflagAtom) {
         tErr = cudaMemcpy(fltBuf, cudaEatom0, nlocal*sizeof(JSE_NNAP::flt_t), cudaMemcpyDeviceToHost);
         if (tErr!=cudaSuccess) return (int)tErr;
-        for (int i = 0; i < nlocal; ++i) {
-            const double tEng = (double)fltBuf[i];
+        for (int ii = 0; ii < nlocal; ++ii) {
+            const double tEng = (double)fltBuf[ii];
             *engVdwl += tEng;
-            if (eflagAtom) eatom[i] += tEng;
+            if (eflagAtom) eatom[ilist[ii]] += tEng;
         }
     }
     if (vflag) {
         tErr = cudaMemcpy(fltBuf, cudaVatom0, nlocal*6L*sizeof(JSE_NNAP::flt_t), cudaMemcpyDeviceToHost);
         if (tErr!=cudaSuccess) return (int)tErr;
-        for (int i = 0; i < nlocal; ++i) {
-            virial[0] += (double)fltBuf[0L*nlocal + i];
-            virial[1] += (double)fltBuf[1L*nlocal + i];
-            virial[2] += (double)fltBuf[2L*nlocal + i];
-            virial[3] += (double)fltBuf[3L*nlocal + i];
-            virial[4] += (double)fltBuf[4L*nlocal + i];
-            virial[5] += (double)fltBuf[5L*nlocal + i];
+        for (int ii = 0; ii < nlocal; ++ii) {
+            virial[0] += (double)fltBuf[0L*nlocal + ii];
+            virial[1] += (double)fltBuf[1L*nlocal + ii];
+            virial[2] += (double)fltBuf[2L*nlocal + ii];
+            virial[3] += (double)fltBuf[3L*nlocal + ii];
+            virial[4] += (double)fltBuf[4L*nlocal + ii];
+            virial[5] += (double)fltBuf[5L*nlocal + ii];
         }
     }
     if (cvflagAtom || vflagAtom) {
         tErr = cudaMemcpy(fltBuf, cudaVatom1, nlocalghost*9L*sizeof(JSE_NNAP::flt_t), cudaMemcpyDeviceToHost);
         if (tErr!=cudaSuccess) return (int)tErr;
         if (cvflagAtom) {
-            for (int i = 0; i < nlocalghost; ++i) {
-                cvatom[i][0] += (double)fltBuf[0L*nlocalghost + i];
-                cvatom[i][1] += (double)fltBuf[1L*nlocalghost + i];
-                cvatom[i][2] += (double)fltBuf[2L*nlocalghost + i];
-                cvatom[i][3] += (double)fltBuf[3L*nlocalghost + i];
-                cvatom[i][4] += (double)fltBuf[4L*nlocalghost + i];
-                cvatom[i][5] += (double)fltBuf[5L*nlocalghost + i];
-                cvatom[i][6] += (double)fltBuf[6L*nlocalghost + i];
-                cvatom[i][7] += (double)fltBuf[7L*nlocalghost + i];
-                cvatom[i][8] += (double)fltBuf[8L*nlocalghost + i];
+            for (int ii = 0; ii < nlocalghost; ++ii) {
+                const int i = ilist[ii];
+                cvatom[i][0] += (double)fltBuf[0L*nlocalghost + ii];
+                cvatom[i][1] += (double)fltBuf[1L*nlocalghost + ii];
+                cvatom[i][2] += (double)fltBuf[2L*nlocalghost + ii];
+                cvatom[i][3] += (double)fltBuf[3L*nlocalghost + ii];
+                cvatom[i][4] += (double)fltBuf[4L*nlocalghost + ii];
+                cvatom[i][5] += (double)fltBuf[5L*nlocalghost + ii];
+                cvatom[i][6] += (double)fltBuf[6L*nlocalghost + ii];
+                cvatom[i][7] += (double)fltBuf[7L*nlocalghost + ii];
+                cvatom[i][8] += (double)fltBuf[8L*nlocalghost + ii];
             }
         }
         if (vflagAtom) {
-            for (int i = 0; i < nlocalghost; ++i) {
-                vatom[i][0] += (double)fltBuf[0L*nlocalghost + i];
-                vatom[i][1] += (double)fltBuf[1L*nlocalghost + i];
-                vatom[i][2] += (double)fltBuf[2L*nlocalghost + i];
-                vatom[i][3] += (double)fltBuf[3L*nlocalghost + i];
-                vatom[i][4] += (double)fltBuf[4L*nlocalghost + i];
-                vatom[i][5] += (double)fltBuf[5L*nlocalghost + i];
+            for (int ii = 0; ii < nlocalghost; ++ii) {
+                const int i = ilist[ii];
+                vatom[i][0] += (double)fltBuf[0L*nlocalghost + ii];
+                vatom[i][1] += (double)fltBuf[1L*nlocalghost + ii];
+                vatom[i][2] += (double)fltBuf[2L*nlocalghost + ii];
+                vatom[i][3] += (double)fltBuf[3L*nlocalghost + ii];
+                vatom[i][4] += (double)fltBuf[4L*nlocalghost + ii];
+                vatom[i][5] += (double)fltBuf[5L*nlocalghost + ii];
             }
         }
     }

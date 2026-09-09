@@ -124,6 +124,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
     
     /// OOP sutffs
     final double mRCut, mRCutSq;
+    final boolean mSortByType;
     final PointerManager mPtrMng;
     private final CudaPointer mCells;
     private final AnyCPointer mCellsCpu;
@@ -136,11 +137,12 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private FloatCudaPointer mPosX = null, mPosY = null, mPosZ = null;
     private final FloatCPointer mPosCpu;
     private final IntCudaPointer mType;
-    private final IntCPointer mTypeCpu;
+    private final IntCPointer mTypeCpu, mIListCpu;
     
-    public CudaNeighborListGetter(double aRCut) throws CudaException {
+    public CudaNeighborListGetter(double aRCut, boolean aSortByType) throws CudaException {
         mRCut = aRCut;
         mRCutSq = aRCut*aRCut;
+        mSortByType = aSortByType;
         mPtrMng = new PointerManager();
         
         mCells = mPtrMng.newCudaPointer(0);
@@ -158,6 +160,10 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mPosCpu = mPtrMng.newFloatCPointer();
         mType = mPtrMng.newIntCudaPointer();
         mTypeCpu = mPtrMng.newIntCPointer();
+        mIListCpu = mPtrMng.newIntCPointer();
+    }
+    public CudaNeighborListGetter(double aRCut) throws CudaException {
+        this(aRCut, false);
     }
     public final static int MAX_SLICE = 512;
     private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
@@ -297,6 +303,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
     public IntCudaPointer type() {
         return mType;
     }
+    public IntCPointer ilist() {
+        return mIListCpu;
+    }
     public IntCudaPointer nlIdx() {
         return mNlIdx;
     }
@@ -334,11 +343,14 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mPtrMng.ensureCapacity(mPos, 3L*(nlocal+nghost));
         mPtrMng.ensureCapacity(mPosCpu, 3L*(nlocal+nghost));
         mPtrMng.ensureCapacity(mType, (nlocal+nghost));
+        mPtrMng.ensureCapacity(mTypeCpu, (nlocal+nghost));
+        mPtrMng.ensureCapacity(mIListCpu, (nlocal+nghost));
         initPosTypeLmp0(
             nlocal, nghost,
             (float)xlo, (float)ylo, (float)zlo,
             aPair.atomX().ptr_(), mPos.ptr_(), mPosCpu.ptr_(),
-            aPair.atomType().ptr_(), mType.ptr_()
+            aPair.atomType().ptr_(), mType.ptr_(), mTypeCpu.ptr_(),
+            mSortByType, aPair.atomNtypes(), mIListCpu.ptr_()
         );
         mPosX = mPos.copy();
         mPosY = mPosX.plus(nlocal+nghost);
@@ -373,7 +385,8 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private static native int initPosTypeLmp0(
         int nlocal, int nghost, float xlo, float ylo, float zlo,
         long posLmp, long pos, long posCpu,
-        long typeLmp, long type);
+        long typeLmp, long type, long typeCpu,
+        boolean sortByType, int ntypes, long ilistCpu);
     
     private static native int initCells0(
         int sliceX, int sliceY, int sliceZ, long cellsTot, long cells, long cellsCpu,

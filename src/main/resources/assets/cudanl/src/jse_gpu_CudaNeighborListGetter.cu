@@ -132,24 +132,58 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosTypeLmp0(
     JNIEnv *aEnv, jclass aClazz, jint nlocal, jint nghost,
     jfloat xlo, jfloat ylo, jfloat zlo, jlong posLmp, jlong pos, jlong posCpu,
-    jlong typeLmp, jlong type) {
+    jlong typeLmp, jlong type, jlong typeCpu,
+    jboolean sortByType, jint ntypes, jlong ilistCpu) {
     
     double **tPosLmp = (double **)(intptr_t)posLmp;
     float *rPos = (float *)(intptr_t)pos;
     float *rPosCpu = (float *)(intptr_t)posCpu;
     int *tTypeLmp = (int *)(intptr_t)typeLmp;
     int *rType = (int *)(intptr_t)type;
+    int *rTypeCpu = (int *)(intptr_t)typeCpu;
+    int *rIListCpu = (int *)(intptr_t)ilistCpu;
     
     const int nlocalghost = nlocal + nghost;
-    for (int i = 0; i < nlocalghost; ++i) {
-        rPosCpu[0L*nlocalghost + i] = (float)tPosLmp[i][0] - xlo;
-        rPosCpu[1L*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
-        rPosCpu[2L*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
+    if (!sortByType) {
+        for (int i = 0; i < nlocalghost; ++i) {
+            rIListCpu[i] = i;
+            rTypeCpu[i] = tTypeLmp[i];
+            rPosCpu[0L*nlocalghost + i] = (float)tPosLmp[i][0] - xlo;
+            rPosCpu[1L*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
+            rPosCpu[2L*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
+        }
+        cudaError_t tErr;
+        tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
+        if (tErr!=cudaSuccess) return (int)tErr;
+        tErr = cudaMemcpy(rType, rTypeCpu, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
+        return tErr;
+    }
+    int ii = 0;
+    for (int t = 1; t <= ntypes; ++t) {
+        for (int i = 0; i < nlocal; ++i) {
+            const int ti = tTypeLmp[i];
+            if (ti == t) {
+                rIListCpu[ii] = i;
+                rTypeCpu[ii] = ti;
+                rPosCpu[0L*nlocalghost + ii] = (float)tPosLmp[i][0] - xlo;
+                rPosCpu[1L*nlocalghost + ii] = (float)tPosLmp[i][1] - ylo;
+                rPosCpu[2L*nlocalghost + ii] = (float)tPosLmp[i][2] - zlo;
+                ++ii;
+            }
+        }
+    }
+    if (ii != nlocal) return cudaErrorInvalidValue;
+    for (int i = nlocal; i < nlocalghost; ++i) {
+            rIListCpu[i] = i;
+            rTypeCpu[i] = tTypeLmp[i];
+            rPosCpu[0L*nlocalghost + i] = (float)tPosLmp[i][0] - xlo;
+            rPosCpu[1L*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
+            rPosCpu[2L*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
     }
     cudaError_t tErr;
     tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
     if (tErr!=cudaSuccess) return (int)tErr;
-    tErr = cudaMemcpy(rType, tTypeLmp, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
+    tErr = cudaMemcpy(rType, rTypeCpu, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
     return tErr;
 }
 

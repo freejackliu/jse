@@ -245,7 +245,7 @@ public class NEP extends AbstractPairPotential {
         mCudaNlSizeA = mPtrMng.newIntCudaPointer();
         mCudaMgNlIdx = mPtrMng.newIntCudaPointer();
         
-        mCudaNlGetter = new CudaNeighborListGetter(rcutMax());
+        mCudaNlGetter = new CudaNeighborListGetter(rcutMax(), true); // 总是重新调整原子种类顺序来进行优化
         mCudaTypeMap = mPtrMng.newIntCudaPointer(aPair.mTypeNum+1);
         mCudaTypeMap.fill(aPair.mTypeMap, aPair.mTypeNum+1);
     }
@@ -301,7 +301,7 @@ public class NEP extends AbstractPairPotential {
         tCode = mCuda2Lammps.invoke(
             nlocal, nghost, eflagEither?1:0, aPair.eflagAtom()?1:0, vflagEither?1:0, vflagAtom?1:0, cvflagAtom?1:0,
             aPair.atomF(), aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
+            mCudaNlGetter.ilist(), mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
         );
         CudaCore.cudaExceptionCheck(tCode);
         mCudaCopyTimer.to();
