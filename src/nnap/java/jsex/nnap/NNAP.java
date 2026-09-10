@@ -313,7 +313,7 @@ public class NNAP extends AbstractPairPotential {
             }
             for (int i = 0; i < tModelSize; ++i) {
                 tCudaNormParam.putAt(i, tCudaParam);
-                tParam.rightShift(mBasis[i].size()*2L + 2L);
+                tCudaParam.rightShift(mBasis[i].size()*2L + 2L);
             }
             mCudaFpHyperParam.memcpy2this(tCudaFpHyperParam, tModelSize*AnyCPointer.TYPE_SIZE);
             mCudaFpParam.memcpy2this(tCudaFpParam, tModelSize*AnyCPointer.TYPE_SIZE);
