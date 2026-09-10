@@ -41,7 +41,7 @@ import static jse.code.CS.MASS;
  */
 public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     protected final static String DEFAULT_UNITS = "metal";
-    protected final static double DEFAULT_ENERGY_WEIGHT = 1.0;
+    protected final static double DEFAULT_ENERGY_WEIGHT = 10.0;
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
     protected final static double DEFAULT_STRESS_WEIGHT = 0.1;
     protected final static int DEFAULT_NTHREADS = 4;
@@ -502,7 +502,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
      * <dl>
      *   <dt>nthreads (可选，默认为 4):</dt>
      *     <dd>指定训练时使用的线程数</dd>
-     *   <dt>energy_weight (可选，默认为 1.0):</dt>
+     *   <dt>energy_weight (可选，默认为 10.0):</dt>
      *     <dd>指定 loss 函数中能量的权重</dd>
      *   <dt>force_weight (可选，默认为 0.1):</dt>
      *     <dd>指定 loss 函数中力的权重</dd>
@@ -562,7 +562,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
      *     <dd>指定每个元素的参考能量</dd>
      *   <dt>nthreads (可选，默认为 4):</dt>
      *     <dd>指定训练时使用的线程数</dd>
-     *   <dt>energy_weight (可选，默认为 1.0):</dt>
+     *   <dt>energy_weight (可选，默认为 10.0):</dt>
      *     <dd>指定 loss 函数中能量的权重</dd>
      *   <dt>force_weight (可选，默认为 0.1):</dt>
      *     <dd>指定 loss 函数中力的权重</dd>
